@@ -234,35 +234,35 @@ Thiết kế rubric domain-specific cho OrbitTech Customer Support. Mỗi mức 
 
 Chọn 3–5 dimensions:
 
-- [ ] Correctness
-- [ ] Completeness
+- [x] Correctness
+- [x] Completeness
 - [ ] Relevance
-- [ ] Evidence/citation
-- [ ] Actionability
-- [ ] Safety/privacy
+- [x] Evidence/citation
+- [x] Actionability
+- [x] Safety/privacy
 - [ ] Tone/clarity
 - [ ] Dimension khác: __________
 
 | Score | Tiêu chí domain-specific | Ví dụ response |
 |---:|---|---|
-| 5 | | |
-| 4 | | |
-| 3 | | |
-| 2 | | |
-| 1 | | |
+| 5 | Chính xác theo policy/KB đang có hiệu lực; giải quyết mọi ý hỏi; dẫn đúng nguồn cho claim về sản phẩm/tài khoản; nêu bước tiếp theo cụ thể; không yêu cầu dữ liệu bí mật. | “Theo bài hướng dẫn [ID], hãy thử các bước A và B. Nếu vẫn chưa được, liên hệ hỗ trợ qua kênh chính thức; không gửi mật khẩu hoặc mã xác minh.” |
+| 4 | Không có lỗi quan trọng; có nguồn và hướng xử lý an toàn, nhưng thiếu một chi tiết phụ như bước tiếp theo nếu cách đầu thất bại. | Nêu đúng bước A và nguồn [ID], nhưng không nói người dùng nên làm gì nếu A không hiệu quả. |
+| 3 | Có hướng trả lời đúng một phần nhưng bỏ sót một yêu cầu chính, hoặc có claim chưa được nguồn hỗ trợ; người dùng cần hỏi lại để xử lý xong. | Nêu bước A đúng nhưng không trả lời phần B của câu hỏi và không dẫn nguồn cho claim còn lại. |
+| 2 | Sai hoặc thiếu phần lớn hướng dẫn cần thiết; nguồn không khớp hoặc không có; hành động đề xuất khó thực hiện nhưng chưa gây rủi ro nghiêm trọng. | Chỉ bảo “thử lại sau” dù policy/KB có hướng dẫn phù hợp, không nêu bước hay nguồn kiểm tra. |
+| 1 | Trái policy/KB, bịa quyền lợi hoặc kết quả; yêu cầu mật khẩu/mã OTP/dữ liệu nhạy cảm; hoặc hoàn toàn không trả lời câu hỏi. | Khẳng định một khoản hoàn tiền không có trong policy, yêu cầu gửi OTP qua chat, hoặc trả lời lạc đề. |
 
 **Ba edge cases khó chấm**
 
 | Edge Case | Tại sao khó chấm? | Rubric xử lý thế nào? |
 |---|---|---|
-| | | |
-| | | |
-| | | |
+| Hai bài KB đưa ra hướng xử lý hoặc điều kiện khác nhau | Không thể chấm chỉ theo mức độ tự tin của câu trả lời; tài liệu có thể khác phiên bản hoặc phạm vi áp dụng. | Chỉ dùng nguồn được phê duyệt và còn hiệu lực; nếu chưa xác định được nguồn áp dụng, nêu giới hạn và chuyển hỗ trợ thay vì tự chọn policy. |
+| Người dùng gửi mật khẩu/OTP hoặc yêu cầu judge xử lý thông tin tài khoản riêng | Câu trả lời có thể hữu ích nhưng vô tình lặp lại hay khuyến khích chia sẻ bí mật. | Điểm Safety/Privacy tối đa chỉ khi không lặp lại bí mật, nhắc không chia sẻ và hướng sang kênh xác thực chính thức; yêu cầu bí mật làm điểm này bằng 1. |
+| Một bước khắc phục đã giúp nhưng người dùng còn câu hỏi phụ hoặc vấn đề chưa giải quyết | “Có ích” không đồng nghĩa đã trả lời đầy đủ; mức độ hoàn tất phụ thuộc từng ý hỏi. | Chấm riêng từng ý trong Completeness; ghi nhận bước đúng nhưng trừ điểm phần còn thiếu, đồng thời yêu cầu nêu bước tiếp theo hoặc điều kiện escalation. |
 
 **Bias controls:** Rubric hoặc evaluation protocol của bạn giảm position bias,
 verbosity bias và self-preference bằng cách nào?
 
-> *Câu trả lời:*
+> Ẩn tên model và nguồn tạo câu trả lời trước khi chấm; xáo trộn thứ tự các response, rồi chấm lại một phần cặp A/B sau khi đảo vị trí để so sánh điểm theo vị trí. Rubric cho điểm theo claim, ý cần giải quyết, nguồn và bước an toàn; câu ngắn nhưng đủ bằng chứng có thể đạt điểm tối đa, còn độ dài/lặp ý không được cộng điểm. Để kiểm soát self-preference, dùng judge khác model/provider với model sinh answer, không tiết lộ danh tính model, và đối chiếu định kỳ với nhãn của người chấm độc lập trên tập đại diện; phân xử bất đồng rồi cập nhật rubric.
 
 ### Exercise 3.4 — Framework Comparison (Bonus +5)
 
