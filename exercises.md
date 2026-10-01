@@ -271,19 +271,46 @@ verbosity bias và self-preference bằng cách nào?
 Chỉ làm sau khi hoàn thành 3.1–3.3. Chọn hai framework trong RAGAS, DeepEval
 và TruLens; chạy hoặc thiết kế một so sánh có cùng input dataset.
 
-| Tiêu chí | Framework 1: ____ | Framework 2: ____ |
+**Phương pháp:** Đây là so sánh thiết kế trên đúng 20 ID của golden_dataset.json,
+artifacts/actual_answers.json và artifacts/benchmark_results.json; hai
+framework chưa được cài hoặc gọi judge nên không có scores framework để báo.
+Giữ question, actual answer, expected answer và năm retrieved chunks theo đúng
+ID/thứ hạng. Với Ragas, map sang user_input, response, reference và
+retrieved_contexts; với DeepEval, map sang input, actual_output,
+expected_output và retrieval_context. Gold evidence giữ riêng để người chấm
+đối chiếu claim. Cùng một judge model/cấu hình, rubric và tập 20 cases mới cho
+phép so sánh công bằng; khi chạy thật phải ghi model, phiên bản framework và
+chi phí judge calls. Lab Faithfulness hiện so answer với gold context, còn
+faithfulness RAG của hai framework dựa trên retrieved contexts, nên không so
+trực tiếp giá trị tuyệt đối của chúng.
+
+| Tiêu chí | Framework 1: Ragas | Framework 2: DeepEval |
 |---|---|---|
-| Setup complexity | | |
-| Metrics available | | |
-| CI/CD integration | | |
-| Kết quả trên cùng dataset | | |
-| Insight rút ra | | |
+| Setup complexity | Ước tính trung bình: cài ragas, tạo 20 SingleTurnSample hoặc dataset, cấu hình evaluator LLM và chọn metrics. | Ước tính trung bình: cài deepeval, tạo 20 LLMTestCase; dùng evaluate() trong script hoặc assert_test() trong test. |
+| Metrics available | Faithfulness, Response Relevancy, Context Recall, Context Precision; có custom metric cho completeness theo rubric. | Faithfulness, Answer Relevancy, Contextual Recall, Contextual Precision; GEval cho completeness theo rubric. |
+| CI/CD integration | Chạy evaluation/experiment rồi tự kiểm tra ngưỡng và lưu report trong CI. | deepeval test run tích hợp pytest/CI, assert_test() có thể làm job fail khi metric dưới ngưỡng. |
+| Kết quả trên cùng dataset | 20/20 records đã có đủ trường để map; **chưa chạy Ragas**, nên score/failure IDs của Ragas chưa có. | Cùng 20/20 records; **chưa chạy DeepEval**, nên score/failure IDs của DeepEval chưa có. |
+| Insight rút ra | Có thể đối chiếu riêng retrieval và answer; cần cấu hình judge/metric tương ứng trước khi kết luận. | Tổ chức quality gate bằng test thuận tiện; chưa có dữ liệu thực nghiệm để khẳng định strict hơn. |
 
 - Scores có nhất quán không?
 - Framework nào strict hơn và vì sao?
 - Hai framework có tìm ra cùng failure cases không?
 
-> *Phân tích:*
+> Chưa thể kết luận ba câu trên từ benchmark heuristic của Lab. Mốc hiện có là
+> 15/20 passed và ba Overall thấp nhất A01, H01, H04, **không phải** kết quả
+> Ragas/DeepEval. Khi chạy so sánh thật, chấm cùng 20 answers đã lưu, cùng
+> retrieved chunks và cùng judge model; so tương quan thứ hạng, chênh lệch
+> score theo metric tương ứng, số ID fail giao nhau và các case bất đồng. Đọc
+> A01/H01/H04 cùng E04/M03 bằng người chấm trước khi nói framework nào strict
+> hơn. Completeness cần custom rubric ở cả hai bên; các metric cùng tên cũng
+> có thể dùng evidence và cách chấm khác nhau, nên không ép chúng về một
+> ngưỡng chung nếu chưa hiệu chuẩn.
+
+Tài liệu thiết kế: [Ragas dataset/evaluation](https://docs.ragas.io/en/stable/getstarted/evals/),
+[Ragas metrics](https://docs.ragas.io/en/latest/concepts/metrics/available_metrics/),
+[DeepEval RAG quickstart](https://deepeval.com/docs/getting-started-rag),
+[DeepEval CI](https://deepeval.com/docs/evaluation-unit-testing-in-ci-cd),
+[DeepEval GEval](https://deepeval.com/docs/metrics-llm-evals).
 
 ### Exercise 3.5 — Retrieval Reranking (Bonus +5)
 
@@ -296,22 +323,50 @@ thay đổi Context Recall hay không.
 4. Rerank cùng tập chunks, không thêm hoặc xóa chunk.
 5. Tính lại hai metrics và giải thích kết quả.
 
+**Cách đo đã chạy:** `.venv/Scripts/python.exe bonus_reranking.py` đọc đúng
+20 traces đã lưu và ghi artifacts/bonus_reranking.json. Reranker dùng
+_question_ làm query để không đưa expected answer vào bước xếp hạng; expected
+chỉ dùng sau đó để tính hai retrieval metrics. Mỗi case giữ đúng năm
+chunk texts/IDs, chỉ đổi thứ tự. Sáu case dưới gồm ba tăng, hai giảm và một
+không đổi; số được làm tròn đến năm chữ số thập phân.
+
 | ID | Recall before | Recall after | Precision before | Precision after | Delta Precision |
 |---|---:|---:|---:|---:|---:|
-| | | | | | |
-| | | | | | |
-| | | | | | |
-| | | | | | |
-| | | | | | |
-| **Avg** | | | | | |
+| E01 | 0.96154 | 0.96154 | 0.91667 | 1.00000 | +0.08333 |
+| H05 | 0.82051 | 0.82051 | 0.95000 | 1.00000 | +0.05000 |
+| A02 | 0.80000 | 0.80000 | 0.88750 | 0.95000 | +0.06250 |
+| M04 | 0.90000 | 0.90000 | 0.86667 | 0.75556 | −0.11111 |
+| A01 | 0.53333 | 0.53333 | 0.80556 | 0.53333 | −0.27222 |
+| H01 | 0.76190 | 0.76190 | 1.00000 | 1.00000 | +0.00000 |
+| **Avg (6)** | **0.79621** | **0.79621** | **0.90440** | **0.87315** | **−0.03125** |
+
+Trên **toàn bộ 20 cases**: Recall trung bình 0.85977 → 0.85977;
+Precision trung bình 0.96632 → 0.95694 (delta −0.00938).
+Có 3 cases tăng Precision, 15 không đổi, 2 giảm. E01/H05/A02 đẩy chunk
+được metric xem là liên quan lên trước. Ở M04, OT-06-P05 trùng nhiều từ của
+question nhưng chỉ phủ 0.067 tập từ expected, nên nhảy qua một chunk liên quan
+và làm AP@K giảm. Ở A01, metric ngưỡng 0.1 xem cả hai chunk repair là liên
+quan do overlap với expected; xếp chúng xuống thấp làm score giảm dù đó là
+nguồn không phù hợp cho câu hỏi y tế. Đây là giới hạn của word overlap, không
+phải bằng chứng rerank làm câu trả lời thực tế tệ hơn.
 
 **Tại sao Recall dự kiến không đổi?**
 
-> *Câu trả lời:*
+> Context Recall lấy hợp các từ của mọi chunk. Reranker trả về đúng cùng
+> năm chunks (kể cả chunk trùng text) và chỉ hoán vị thứ hạng, nên hợp tập từ
+> giữ nguyên. Script kiểm tra điều này ở cả 20 cases; tất cả Recall before
+> bằng Recall after.
 
 **Khi nào reranking không đủ và cần sửa retriever/query/chunking?**
 
-> *Câu trả lời:*
+> Khi evidence cần thiết không nằm trong tập đã lấy về, đổi thứ tự không thể
+> tạo ra nó. H01 vẫn thiếu OT-09-P03 về mốc đếm từ confirmed delivery:
+> Recall 0.76190, Precision 1.00000 trước/sau nhưng answer cũ vẫn sai hạn.
+> A01 thiếu đoạn scope OT-00-P01; cần cải thiện query/intent routing hoặc
+> cách chia và chọn chunks. Rerank theo question cũng có thể hạ Precision vì
+> từ trùng câu hỏi không đồng nghĩa chunk phủ expected answer. Dùng expected
+> answer làm query sẽ tạo một phép đo oracle thiên vị reference, nên không
+> dùng kết quả đó làm bằng chứng cải thiện retriever triển khai.
 
 ---
 
@@ -325,11 +380,11 @@ Hoàn thành `reflection.md` bằng kết quả thật từ Exercise 3.2.
 
 Hoàn thành kiểm tra cuối trong khoảng 11:50–12:00.
 
-- [ ] Tất cả required tests pass.
-- [ ] `golden_dataset.json` validate thành công.
-- [ ] Exercise 3.1 hoàn thành trong file JSON và bảng kết quả phía trên.
-- [ ] Exercise 3.2 có năm metrics, aggregate report và ba cases thấp nhất.
-- [ ] Exercise 3.3 có rubric 1–5 và bias controls.
-- [ ] `reflection.md` có ba failure analyses và regression strategy.
-- [ ] Đã copy `template.py` thành `solution/solution.py`.
-- [ ] Exercise 3.4 và 3.5 chỉ làm nếu chọn bonus.
+- [x] Tất cả required tests pass.
+- [x] `golden_dataset.json` validate thành công.
+- [x] Exercise 3.1 hoàn thành trong file JSON và bảng kết quả phía trên.
+- [x] Exercise 3.2 có năm metrics, aggregate report và ba cases thấp nhất.
+- [x] Exercise 3.3 có rubric 1–5 và bias controls.
+- [x] `reflection.md` có ba failure analyses và regression strategy.
+- [x] Đã copy `template.py` thành `solution/solution.py`.
+- [x] Exercise 3.4 và 3.5 đã hoàn thành theo hai phương pháp ghi ở trên.

@@ -353,14 +353,16 @@ def rerank_by_overlap(contexts: list[str], query: str) -> list[str]:
     """A minimal lexical reranker: sort chunks by word overlap with the query,
     most-overlapping first. Stand-in for a real cross-encoder reranker.
 
-    Reordering relevant chunks toward the top increases the rank-aware
-    Context Precision WITHOUT changing the retrieved set.
-
-    Hint: sorted(contexts, key=lambda c: len(_tokenize(c) & _tokenize(query)),
-                 reverse=True)
+    The sort is stable for equal overlap and preserves the retrieved set.
+    Context Recall therefore stays the same; rank-aware Context Precision
+    may change depending on which chunks the metric considers relevant.
     """
-    # TODO (Bonus — Exercise 3.5): implement the reranker
-    raise NotImplementedError("Implement rerank_by_overlap")
+    query_tokens = _tokenize(query)
+    return sorted(
+        contexts,
+        key=lambda chunk: len(_tokenize(chunk) & query_tokens),
+        reverse=True,
+    )
 
 
 # ---------------------------------------------------------------------------
